@@ -6,9 +6,8 @@ import cv2
 import scipy
 from tqdm import tqdm
 
-# input/output image resolution
-img_width = 256
-img_height = 256
+img_width = 600
+img_height = 600
 
 def tps_rbf(d):
     return cp.where(d==0, 0, d*d*cp.log2(d))
@@ -34,14 +33,16 @@ def read_pngs(dir):
 
     return np.array(imgs)
 
-N = 125
 
-REF_PATH = "./ref/"
-REF_CAPTURED_WARPED_PATH = "./tps_input_ref/"
+N = 500
+
+# \light2\pos2\squares\cam\warp
+REF_PATH = "./texture/"
+REF_CAPTURED_WARPED_PATH = "./tps_input_texture/"
 INPUT_IMG_PATH = "./img_0003.png"
 
-# Adjust this parameter depends on your vram
-STEP = 60
+STEP = 4
+# ref shape :  (125, 100, 100, 3)
 ref = read_pngs(REF_PATH)
 captured = read_pngs(REF_CAPTURED_WARPED_PATH)
 
@@ -65,6 +66,7 @@ output_img = np.zeros(input_img.shape).astype('float32')
 
 Q_ = np.transpose(captured, (1,2,0,3))
 Q_ = np.insert(Q_, 0, 1, axis=3)
+# (125, 4, 100, 100)
 Q_ = np.transpose(Q_, (2, 3, 0, 1))
 
 O = np.zeros((4, 4, STEP, img_width))
@@ -76,14 +78,12 @@ for i in range(N):
 
 print("Done")
 
-# Convert from numpy to cupy
 Q_ = cp.asarray(Q_)
 O = cp.asarray(O)
 euclid_dist_input_captured_mat = cp.asarray(euclid_dist_input_captured_mat)
 ref = cp.asarray(ref)
 captured = cp.asarray(captured)
 input_img = cp.asarray(input_img)
-
 
 def process(w_start, w_end):
     w_partial = w_end - w_start
@@ -99,12 +99,15 @@ def process(w_start, w_end):
     alpha = cp.sum(euclid_dist_mat, axis=(0, 1))
     alpha /= N * N
 
+
     K = rbf_mat + (delta[:,:,:w_partial] * lambda_val * alpha * alpha)
 
     L1 = cp.concatenate([K, Q], axis=1)
     L2 = cp.concatenate([cp.transpose(Q, (1, 0, 2, 3)), O[:,:,:w_partial]], axis=1)
+    # (129, 129, 10, 100)
     L = cp.concatenate([L1, L2], axis=0)
 
+    # ref shape :  (125, 100, 100, 3)
     P = cp.transpose(ref[:, w_start:w_end, :, :], (0,3,1,2))
     PO = cp.concatenate([P, cp.zeros((4, 3, w_partial, img_height))], axis=0)
 
@@ -134,6 +137,7 @@ def process(w_start, w_end):
 
 if __name__ == '__main__':
 
+
     assert (ref.shape == captured.shape)
     assert (ref.shape[0] == N)
 
@@ -145,4 +149,4 @@ if __name__ == '__main__':
         output_img[min_w:max_w] = process(min_w, max_w)
         
 
-    cv2.imwrite("output_ref.png", cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)*255)
+    cv2.imwrite("output_texture.png", cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)*255)
