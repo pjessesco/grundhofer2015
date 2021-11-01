@@ -14,7 +14,14 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QObject, pyqtSignal
 
-WARPINGNET_PARAM_PATH = "dasan_nothing_1019_CompenNet++_l1+ssim_500_48_1500_0.001_0.2_1000_0.0001.pth_warpingnet.pth"
+import threading
+import socket
+import time
+import sys
+import os
+
+WARPINGNET_PARAM_PATH = "set1_plane_CompenNet++_l1+ssim_500_48_1500_0.001_0.2_1000_0.0001.pth_warpingnet.pth"
+
 data_dir = "data/"
 
 
