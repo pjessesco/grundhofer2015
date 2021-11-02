@@ -38,8 +38,8 @@ N = 500
 
 # \light2\pos2\squares\cam\warp
 REF_PATH = "./texture/"
-REF_CAPTURED_WARPED_PATH = "./tps_input_texture/"
-INPUT_IMG_PATH = "./img_0003.png"
+REF_CAPTURED_WARPED_PATH = "./tps_input/"
+INPUT_IMG_PATH = "./ref.png"
 
 STEP = 4
 # ref shape :  (125, 100, 100, 3)
