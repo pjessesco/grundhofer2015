@@ -36,19 +36,17 @@ def read_pngs(dir):
 
 N = 500
 
-# \light2\pos2\squares\cam\warp
 REF_PATH = "./texture/"
 REF_CAPTURED_WARPED_PATH = "./tps_input/"
 INPUT_IMG_PATH = "./ref.png"
-
+color_channel = 3
 STEP = 4
-# ref shape :  (125, 100, 100, 3)
+
+print("Reading images...")
 ref = read_pngs(REF_PATH)
 captured = read_pngs(REF_CAPTURED_WARPED_PATH)
-
-color_channel = 3
-
 input_img = read_png(INPUT_IMG_PATH)
+print("Done")
 
 delta = cp.zeros((N, N, STEP, img_width))
 for i in range(N):
@@ -57,8 +55,6 @@ for i in range(N):
             delta[i, j] = cp.ones((STEP, img_width))
         else:
             delta[i,j] = cp.zeros((STEP, img_width))
-
-print(delta.shape)
 
 lambda_val = 0.05
 
