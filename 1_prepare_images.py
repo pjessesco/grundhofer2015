@@ -15,6 +15,7 @@ from PIL import Image
 import time
 
 import os
+import shutil
 from common import *
 
 
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 
     # Project warpingnet-inferenced images and capture
 
-    projected_img_dir = "tps_input_before_cropped"
+    projected_img_dir = "tps_input_before_cropped/"
     input_path = os.path.join(OUTPUT_IMG_PATH)
     output_path = os.path.join(projected_img_dir)
 
@@ -103,15 +104,18 @@ if __name__ == "__main__":
 
 
     # Crop projected image
-    cropped_img_dir = "tps_input"
+    cropped_img_dir = "tps_input/"
     if not os.path.exists(cropped_img_dir):
         os.makedirs(cropped_img_dir)
     
-    for image in tqdm.tqdm(os.listdir(cropped_img_dir)):
-        img = Image.open(image)
+    for image in tqdm.tqdm(os.listdir(projected_img_dir)):
+        img = Image.open(projected_img_dir+image)
         img = img.crop((left, up, right, down))
-        img.save(image)
+        img.save(cropped_img_dir+image)
 
+    shutil.rmtree("texture_warped")
+    shutil.rmtree("proj_input_texture")
+    shutil.rmtree("tps_input_before_cropped")
     
 
 
