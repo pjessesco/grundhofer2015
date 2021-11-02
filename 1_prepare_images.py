@@ -23,8 +23,6 @@ if __name__ == "__main__":
     myapp = myImageDisplayApp()
     iPad = iPadLiDARDevice('192.168.0.17')
 
-    left, up, right, down = 174, 138, 462, 396
-
     # Warping train images
     offset_x, offset_y, transformed_width, transformed_height = calc_offset(left, up, right, down)
 
