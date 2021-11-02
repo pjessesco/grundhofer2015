@@ -81,45 +81,34 @@ ref = cp.asarray(ref)
 captured = cp.asarray(captured)
 input_img = cp.asarray(input_img)
 
+
+
 def process(w_start, w_end):
     w_partial = w_end - w_start
 
     euclid_dist_mat = cp.zeros((N, N, w_partial, img_height))
+    
     for i in range(N):
         for j in range(i, N):
             euclid_dist_mat[i, j] = euclid_dist_mat[j, i] = cp.linalg.norm(captured[i, w_start:w_end] - captured[j, w_start:w_end], axis=2)
+    
     rbf_mat = tps_rbf(euclid_dist_mat)
-
 
     Q = Q_[:, :, w_start:w_end, :]
     alpha = cp.sum(euclid_dist_mat, axis=(0, 1))
     alpha /= N * N
 
-
     K = rbf_mat + (delta[:,:,:w_partial] * lambda_val * alpha * alpha)
+    L = cp.concatenate([cp.concatenate([K, Q], axis=1), cp.concatenate([cp.transpose(Q, (1, 0, 2, 3)), O[:,:,:w_partial]], axis=1)], axis=0)
 
-    L1 = cp.concatenate([K, Q], axis=1)
-    L2 = cp.concatenate([cp.transpose(Q, (1, 0, 2, 3)), O[:,:,:w_partial]], axis=1)
-    # (129, 129, 10, 100)
-    L = cp.concatenate([L1, L2], axis=0)
-
-    # ref shape :  (125, 100, 100, 3)
-    P = cp.transpose(ref[:, w_start:w_end, :, :], (0,3,1,2))
-    PO = cp.concatenate([P, cp.zeros((4, 3, w_partial, img_height))], axis=0)
+    PO = cp.concatenate([cp.transpose(ref[:, w_start:w_end, :, :], (0,3,1,2)), cp.zeros((4, 3, w_partial, img_height))], axis=0)
 
     W = cp.zeros((N+4, color_channel, w_partial, img_height))
     for w in range(0, w_partial):
         for h in range(img_height):
             W[:, :, w, h] = cp.linalg.inv(L[:, :, w, h]) @ PO[:, :, w, h]
 
-
-    tmp1 = tps_rbf(euclid_dist_input_captured_mat[:, w_start:w_end, :])
-    tmp2 = cp.zeros((4, w_partial, img_height))
-    tmp = cp.concatenate([tmp1, tmp2], axis=0)
-
-    tmp = cp.reshape(tmp, (N+4, 1, w_partial, img_height))
-
-    ret_val = cp.sum(tmp * W, axis=0).get()
+    ret_val = cp.sum(cp.reshape(cp.concatenate([tps_rbf(euclid_dist_input_captured_mat[:, w_start:w_end, :]), cp.zeros((4, w_partial, img_height))], axis=0), (N+4, 1, w_partial, img_height)) * W, axis=0).get()
 
     partial_input = np.reshape(input_img[w_start:w_end, :], (1, w_partial, img_height, 3))
 
