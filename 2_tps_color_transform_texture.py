@@ -101,12 +101,9 @@ def process(w_start, w_end):
     K = rbf_mat + (delta[:,:,:w_partial] * lambda_val * alpha * alpha)
     L = cp.concatenate([cp.concatenate([K, Q], axis=1), cp.concatenate([cp.transpose(Q, (1, 0, 2, 3)), O[:,:,:w_partial]], axis=1)], axis=0)
 
-    PO = cp.concatenate([cp.transpose(ref[:, w_start:w_end, :, :], (0,3,1,2)), cp.zeros((4, 3, w_partial, img_height))], axis=0)
-
-    W = cp.zeros((N+4, color_channel, w_partial, img_height))
-    for w in range(0, w_partial):
-        for h in range(img_height):
-            W[:, :, w, h] = cp.linalg.inv(L[:, :, w, h]) @ PO[:, :, w, h]
+    PO = cp.transpose(cp.concatenate([cp.transpose(ref[:, w_start:w_end, :, :], (0,3,1,2)), cp.zeros((4, 3, w_partial, img_height))], axis=0), (2,3,0,1))
+    
+    W = cp.transpose(cp.linalg.inv(cp.transpose(L, (2,3,0,1))) @ PO, (2,3,0,1))
 
     ret_val = cp.sum(cp.reshape(cp.concatenate([tps_rbf(euclid_dist_input_captured_mat[:, w_start:w_end, :]), cp.zeros((4, w_partial, img_height))], axis=0), (N+4, 1, w_partial, img_height)) * W, axis=0).get()
 
