@@ -38,14 +38,12 @@ N = 500
 
 REF_PATH = "./texture/"
 REF_CAPTURED_WARPED_PATH = "./tps_input/"
-INPUT_IMG_PATH = "./ref.png"
 color_channel = 3
 STEP = 4
 
 print("Reading images...")
 ref = read_pngs(REF_PATH)
 captured = read_pngs(REF_CAPTURED_WARPED_PATH)
-input_img = read_png(INPUT_IMG_PATH)
 print("Done")
 
 delta = cp.zeros((N, N, STEP, img_width))
@@ -58,8 +56,6 @@ for i in range(N):
 
 lambda_val = 0.05
 
-output_img = np.zeros(input_img.shape).astype('float32')
-
 Q_ = np.transpose(captured, (1,2,0,3))
 Q_ = np.insert(Q_, 0, 1, axis=3)
 # (125, 4, 100, 100)
@@ -67,21 +63,14 @@ Q_ = np.transpose(Q_, (2, 3, 0, 1))
 
 O = np.zeros((4, 4, STEP, img_width))
 
-print("Preprocess common terms")
-euclid_dist_input_captured_mat = np.zeros((N, img_width, img_height))
-for i in range(N):
-    euclid_dist_input_captured_mat[i] = np.linalg.norm(input_img - captured[i], axis=2)
-
 print("Done")
 
 Q_ = cp.asarray(Q_)
 O = cp.asarray(O)
-euclid_dist_input_captured_mat = cp.asarray(euclid_dist_input_captured_mat)
 ref = cp.asarray(ref)
 captured = cp.asarray(captured)
-input_img = cp.asarray(input_img)
 
-
+W = cp.zeros((N+4, 3, img_width, img_height))
 
 def process(w_start, w_end):
     w_partial = w_end - w_start
@@ -103,18 +92,7 @@ def process(w_start, w_end):
 
     PO = cp.transpose(cp.concatenate([cp.transpose(ref[:, w_start:w_end, :, :], (0,3,1,2)), cp.zeros((4, 3, w_partial, img_height))], axis=0), (2,3,0,1))
     
-    W = cp.transpose(cp.linalg.inv(cp.transpose(L, (2,3,0,1))) @ PO, (2,3,0,1))
-
-    ret_val = cp.sum(cp.reshape(cp.concatenate([tps_rbf(euclid_dist_input_captured_mat[:, w_start:w_end, :]), cp.zeros((4, w_partial, img_height))], axis=0), (N+4, 1, w_partial, img_height)) * W, axis=0).get()
-
-    partial_input = np.reshape(input_img[w_start:w_end, :], (1, w_partial, img_height, 3))
-
-    ret_val += (W[N]).get()
-    ret_val += (W[N + 1] * partial_input[:,:,:,0]).get()
-    ret_val += (W[N + 2] * partial_input[:,:,:,1]).get()
-    ret_val += (W[N + 3] * partial_input[:,:,:,2]).get()
-
-    return np.transpose(ret_val, (1,2,0))
+    return cp.transpose(cp.linalg.inv(cp.transpose(L, (2,3,0,1))) @ PO, (2,3,0,1))
 
 
 if __name__ == '__main__':
@@ -128,7 +106,7 @@ if __name__ == '__main__':
     for w in tqdm(params):
         min_w = w
         max_w = min(w+STEP, img_width)
-        output_img[min_w:max_w] = process(min_w, max_w)
+        W[:, :, min_w:max_w, :] = process(min_w, max_w)
         
+    cp.save("W", W)
 
-    cv2.imwrite("output_texture.png", cv2.cvtColor(output_img, cv2.COLOR_BGR2RGB)*255)

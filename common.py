@@ -20,10 +20,11 @@ import time
 import sys
 import os
 
-WARPINGNET_PARAM_PATH = "set1_plane_CompenNet++_l1+ssim_500_48_1500_0.001_0.2_1000_0.0001.pth_warpingnet.pth"
+WARPINGNET_PARAM_PATH = "set3_curve_CompenNet++_l1+ssim_500_48_1500_0.001_0.2_1000_0.0001.pth_warpingnet.pth"
+# WARPINGNET_PARAM_PATH = "good.pth"
 
 data_dir = "data/"
-left, up, right, down = 265, 100, 467, 295
+left, up, right, down = 160, 177, 482, 440
 
 def read_png(path):
     img = cv2.imread(path, cv2.IMREAD_UNCHANGED).astype('float32')

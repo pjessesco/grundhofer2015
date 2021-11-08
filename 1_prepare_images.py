@@ -21,8 +21,8 @@ from common import *
 
 if __name__ == "__main__":
 
-    myapp = myImageDisplayApp()
-    iPad = iPadLiDARDevice('192.168.0.17')
+    # myapp = myImageDisplayApp()
+    # iPad = iPadLiDARDevice('192.168.0.17')
 
     # Warping train images
     offset_x, offset_y, transformed_width, transformed_height = calc_offset(left, up, right, down)
@@ -84,38 +84,38 @@ if __name__ == "__main__":
 
     # Project warpingnet-inferenced images and capture
 
-    projected_img_dir = "tps_input_before_cropped/"
-    input_path = os.path.join(OUTPUT_IMG_PATH)
-    output_path = os.path.join(projected_img_dir)
+    # projected_img_dir = "tps_input_before_cropped/"
+    # input_path = os.path.join(OUTPUT_IMG_PATH)
+    # output_path = os.path.join(projected_img_dir)
 
-    if not os.path.exists(input_path):
-        os.makedirs(input_path)
+    # if not os.path.exists(input_path):
+    #     os.makedirs(input_path)
 
-    if not os.path.exists(output_path):            
-        os.makedirs(output_path)
+    # if not os.path.exists(output_path):            
+    #     os.makedirs(output_path)
 
-    images = os.listdir(input_path)
-    images.sort()
+    # images = os.listdir(input_path)
+    # images.sort()
 
-    for image in images:
-        myapp.emit_image_update(os.path.join(input_path, image))
-        time.sleep(0.2)
-        iPad.get_rgb_image(output_path, image)
+    # for image in images:
+    #     myapp.emit_image_update(os.path.join(input_path, image))
+    #     time.sleep(0.2)
+    #     iPad.get_rgb_image(output_path, image)
 
 
-    # Crop projected image
-    cropped_img_dir = "tps_input/"
-    if not os.path.exists(cropped_img_dir):
-        os.makedirs(cropped_img_dir)
+    # # Crop projected image
+    # cropped_img_dir = "tps_input/"
+    # if not os.path.exists(cropped_img_dir):
+    #     os.makedirs(cropped_img_dir)
     
-    for image in tqdm.tqdm(os.listdir(projected_img_dir)):
-        img = Image.open(projected_img_dir+image)
-        img = img.crop((left, up, right, down))
-        img.save(cropped_img_dir+image)
+    # for image in tqdm.tqdm(os.listdir(projected_img_dir)):
+    #     img = Image.open(projected_img_dir+image)
+    #     img = img.crop((left, up, right, down))
+    #     img.save(cropped_img_dir+image)
 
-    shutil.rmtree("texture_warped")
-    shutil.rmtree("proj_input_texture")
-    shutil.rmtree("tps_input_before_cropped")
+    # shutil.rmtree("texture_warped")
+    # shutil.rmtree("proj_input_texture")
+    # shutil.rmtree("tps_input_before_cropped")
     
 
 
