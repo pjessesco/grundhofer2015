@@ -119,7 +119,7 @@ class qtAppWidget (QLabel):
         # Get avaliable screens/monitors
         # https://doc.qt.io/qt-5/qscreen.html
         # Get info on selected screen 
-        self.selected_screen = 1            # Select the desired monitor/screen
+        self.selected_screen = 0            # Select the desired monitor/screen
 
         self.screens_available = self.app.screens()
         self.screen = self.screens_available[self.selected_screen]
