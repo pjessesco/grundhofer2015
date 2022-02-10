@@ -20,11 +20,13 @@ import time
 import sys
 import os
 
+import pyrealsense2 as rs
+
 WARPINGNET_PARAM_PATH = "set3_curve_CompenNet++_l1+ssim_500_48_1500_0.001_0.2_1000_0.0001.pth_warpingnet.pth"
 # WARPINGNET_PARAM_PATH = "good.pth"
 
 data_dir = "data/"
-left, up, right, down = 160, 177, 482, 440
+left, up, right, down = 197,119,197+280,119+280
 
 def read_png(path):
     img = cv2.imread(path, cv2.IMREAD_UNCHANGED).astype('float32')
@@ -37,44 +39,63 @@ def calc_offset(x1, y1, x2, y2):
     return x1, y1, x2-x1, y2-y1
 
 
-class iPadLiDARDevice():
+class RealSense():
+    def __init__(self) -> None:
+        try:
+            self.width = 640
+            self.height = 480
+            self.pc = rs.pointcloud()
+            self.points = rs.points()
+            self.pipeline = rs.pipeline()
+            self.config = rs.config()
+            self.config.enable_stream(rs.stream.depth, self.width, self.height, rs.format.z16, 30)
+            self.config.enable_stream(rs.stream.color, self.width, self.height, rs.format.bgr8, 60)
+            self.profile = self.pipeline.start(self.config)
+            
+            depth_sensor = self.profile.get_device().first_depth_sensor()
+            self.depth_scale = depth_sensor.get_depth_scale()
+            self.align = rs.align(rs.stream.color)
 
-    def __init__(self, host, port=12345):        
-        self.__clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__clientSocket.connect((host, port))
-        self.__tail_utf8 = "__TAIL_TAIL_TAIL__".encode('utf-8')
+            self.color_sensor = self.profile.get_device().query_sensors()[1]
+            self.color_sensor.set_option(rs.option.enable_auto_exposure, False)
+            self.color_sensor.set_option(rs.option.enable_auto_white_balance, False)
+
+            self.SAMPLE_NUM = 1
+            print("RealSense initialized.....") 
+
+        except Exception as e:
+            print("Exception occurs : ", e)
+            exit(-1)
+
+    def __del__(self):
+        self.pipeline.stop()
+        pass
+    
+    def get_rgb_image(self,output_path, filename):
+        path=output_path+"/"+filename+".png"
+        # Wait for a coherent pair of frames: depth and color
         
-        print("iPadLiDARDevice : Check connectivity")
-        self.__request('dummy')
-        self.__request('dummy')
-        print("iPadLiDARDevice : Done")
+        color_image = np.zeros((480, 640, 3))
+        for i in range(self.SAMPLE_NUM):
+            frames = self.pipeline.wait_for_frames()
+            frames = self.align.process(frames)
+            color_frame = frames.get_color_frame()
 
-    def __request(self, signal):
-        print("send signal : ",signal)
-        self.__clientSocket.send(signal.encode())
-        print("receiving..")
+            if not color_frame:
+                print("no frame detected")
+                exit(-1)
+            # Convert images to numpy arrays
+            color_image += np.asanyarray(color_frame.get_data())
 
-        data = self.__clientSocket.recv(50000)
+        cv2.imwrite(path,color_image/self.SAMPLE_NUM)
+        print("color image saved")
 
-        while self.__tail_utf8 not in data:
-            print("partially received...")
-            data += self.__clientSocket.recv(50000)
-
-        print("whole data received : ", len(data))
-        # if not sleep app crashes
-        time.sleep(1)
-        return data
-
-    def get_rgb_image(self, dir, filename):
-        img_data = self.__request('rgb')
-        path = os.path.join(dir, filename)
-        f = open(path, 'wb')
-        f.write(img_data)
-        f.close()
-
-        rgb = cv2.imread(path, cv2.IMREAD_COLOR)[:, :, ::-1]
-        return rgb
-
+    def set_dark(self):
+        self.color_sensor.set_option(rs.option.white_balance, 6500)
+        self.color_sensor.set_option(rs.option.exposure, 625)
+        self.color_sensor.set_option(rs.option.brightness, 0)
+        time.sleep(10)
+  
 # Reference : https://stackoverflow.com/a/59539843
 class myImageDisplayApp (QObject):
 
@@ -98,8 +119,8 @@ class myImageDisplayApp (QObject):
         self.app.exec_()
 
     def emit_image_update(self, pattern_file=None):
-        print('emit_image_update signal')
         self.signal_update_image.emit(pattern_file)
+        time.sleep(0.5)
 
 class qtAppWidget (QLabel):
 
@@ -119,7 +140,7 @@ class qtAppWidget (QLabel):
         # Get avaliable screens/monitors
         # https://doc.qt.io/qt-5/qscreen.html
         # Get info on selected screen 
-        self.selected_screen = 0            # Select the desired monitor/screen
+        self.selected_screen = 1            # Select the desired monitor/screen
 
         self.screens_available = self.app.screens()
         self.screen = self.screens_available[self.selected_screen]
