@@ -25,6 +25,7 @@ if __name__ == "__main__":
     l515 = RealSense()
 
     l515.set_dark()
+    time.sleep(10)
 
     # Warping train images
     offset_x, offset_y, transformed_width, transformed_height = calc_offset(left, up, right, down)

@@ -26,7 +26,7 @@ WARPINGNET_PARAM_PATH = "set3_curve_CompenNet++_l1+ssim_500_48_1500_0.001_0.2_10
 # WARPINGNET_PARAM_PATH = "good.pth"
 
 data_dir = "data/"
-left, up, right, down = 197,119,197+280,119+280
+left, up, right, down = 158, 117,158+280, 117+280
 
 def read_png(path):
     img = cv2.imread(path, cv2.IMREAD_UNCHANGED).astype('float32')
@@ -91,10 +91,10 @@ class RealSense():
         print("color image saved")
 
     def set_dark(self):
-        self.color_sensor.set_option(rs.option.white_balance, 6500)
+        self.color_sensor.set_option(rs.option.white_balance, 6300)
         self.color_sensor.set_option(rs.option.exposure, 625)
+        self.color_sensor.set_option(rs.option.gain, 0)
         self.color_sensor.set_option(rs.option.brightness, 0)
-        time.sleep(10)
   
 # Reference : https://stackoverflow.com/a/59539843
 class myImageDisplayApp (QObject):
